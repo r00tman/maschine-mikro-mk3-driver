@@ -1,3 +1,5 @@
+use num_derive::FromPrimitive;
+
 #[derive(FromPrimitive, Debug, Clone, Copy, PartialEq)]
 pub enum Buttons {
     Maschine = 0,

@@ -1,3 +1,4 @@
+use num_derive::FromPrimitive;
 use crate::controls::Buttons;
 use hidapi::{HidDevice, HidResult};
 
