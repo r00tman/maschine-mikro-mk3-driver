@@ -1,8 +1,3 @@
-extern crate hidapi;
-extern crate num;
-#[macro_use]
-extern crate num_derive;
-extern crate alsa;
 mod controls;
 mod font;
 mod lights;
@@ -13,8 +8,11 @@ use crate::lights::{Brightness, Lights, PadColors};
 use crate::screen::Screen;
 use alsa::seq;
 use hidapi::{HidDevice, HidResult};
+use midly::{live::LiveEvent, num::u7, MidiMessage};
 use std::ffi::CString;
 use std::{thread, time};
+use midir::MidiOutput;
+use midir::os::unix::VirtualOutput;
 
 fn self_test(device: &HidDevice, screen: &mut Screen, lights: &mut Lights) -> HidResult<()> {
     Font::write_digit(screen, 0, 0, 1, 4);
@@ -70,30 +68,27 @@ fn self_test(device: &HidDevice, screen: &mut Screen, lights: &mut Lights) -> Hi
 }
 
 fn main() -> HidResult<()> {
-    // let s = alsa::Seq::open(None, Some(alsa::Direction::Capture), true).unwrap();
-    // let cstr = CString::new("rust_synth_example").unwrap();
-    // s.set_client_name(&cstr).unwrap();
+    let notemaps: [u7; 16] = [
+        49.into(),
+        27.into(),
+        31.into(),
+        57.into(),
+        48.into(),
+        47.into(),
+        43.into(),
+        59.into(),
+        36.into(),
+        38.into(),
+        46.into(),
+        51.into(),
+        36.into(),
+        38.into(),
+        42.into(),
+        44.into(),
+    ];
 
-    // // Create a destination port we can read from
-    // let mut dinfo = seq::PortInfo::empty().unwrap();
-    // dinfo.set_capability(seq::PortCap::WRITE | seq::PortCap::SUBS_WRITE);
-    // dinfo.set_type(seq::PortType::MIDI_GENERIC | seq::PortType::APPLICATION);
-    // dinfo.set_name(&cstr);
-    // s.create_port(&dinfo).unwrap();
-    // let dport = dinfo.get_port();
-
-    // let sq: alsa::Seq = alsa::Seq::open(Some(&CString::new("Maschine Mikro Mk3").unwrap()), Some(alsa::Direction::Playback), true).unwrap();
-    let sequencer = alsa::Seq::open(None, Some(alsa::Direction::Playback), true).unwrap();
-    sequencer
-        .set_client_name(&CString::new("open-maschine").unwrap())
-        .unwrap();
-
-    let mut port_info = seq::PortInfo::empty().unwrap();
-    port_info.set_name(&CString::new("Maschine Mikro Mk3 MIDI").unwrap());
-    port_info.set_capability(seq::PortCap::READ | seq::PortCap::SUBS_READ);
-    port_info.set_type(seq::PortType::MIDI_GENERIC);
-    sequencer.create_port(&port_info).unwrap();
-    let seq_port = port_info.get_port();
+    let output = MidiOutput::new("Maschine Mikro MK3").expect("Couldn't open MIDI output");
+    let mut port = output.create_virtual("Maschine Mikro MK3 MIDI Out").expect("Couldn't create virtual port");
 
     let api = hidapi::HidApi::new()?;
     #[allow(non_snake_case)]
@@ -173,12 +168,12 @@ fn main() -> HidResult<()> {
                 if i > 1 && idx == 0 && evt as u8 == 0 && val == 0 {
                     break;
                 }
-                let evt: PadEventType = num::FromPrimitive::from_u8(evt).unwrap();
+                let pad_evt: PadEventType = num::FromPrimitive::from_u8(evt).unwrap();
                 // if evt != PadEventType::Aftertouch {
-                println!("Pad {}: {:?} @ {}", idx, evt, val);
+                println!("Pad {}: {:?} @ {}", idx, pad_evt, val);
                 // }
                 let (_, prev_b) = lights.get_pad(idx as usize);
-                let b = match evt {
+                let b = match pad_evt {
                     PadEventType::NoteOn | PadEventType::PressOn => Brightness::Normal,
                     PadEventType::NoteOff | PadEventType::PressOff => Brightness::Off,
                     PadEventType::Aftertouch => {
@@ -197,36 +192,33 @@ fn main() -> HidResult<()> {
                 }
                 // let padids = [13, 14, 15, 16, 9, 10, 11, 12, 5, 6, 7, 8, 1, 2, 3, 4];
                 // let note = padids[idx as usize]-1+36;
-                let notemaps = [
-                    49, 27, 31, 57, 48, 47, 43, 59, 36, 38, 46, 51, 36, 38, 42, 44,
-                ];
+
                 let note = notemaps[idx as usize];
                 let mut velocity = (val >> 5) as u8;
                 if val > 0 && velocity == 0 {
                     velocity = 1;
                 }
-                let ev_note = seq::EvNote {
-                    channel: 0,
-                    note: note,
-                    duration: 0,
-                    velocity: velocity,
-                    off_velocity: velocity,
+
+                let event = match pad_evt {
+                    PadEventType::NoteOn | PadEventType::PressOn => Some(MidiMessage::NoteOn {
+                        key: note,
+                        vel: velocity.into(),
+                    }),
+                    PadEventType::NoteOff | PadEventType::PressOff => Some(MidiMessage::NoteOff {
+                        key: note,
+                        vel: velocity.into(),
+                    }),
+                    _ => {None}
                 };
 
-                let evt_type = match evt {
-                    PadEventType::NoteOn | PadEventType::PressOn => seq::EventType::Noteon,
-                    PadEventType::NoteOff | PadEventType::PressOff => seq::EventType::Noteoff,
-                    PadEventType::Aftertouch => seq::EventType::Keypress,
-                };
-
-                if evt_type != seq::EventType::Keypress {
-                    let mut event = seq::Event::new(evt_type, &ev_note);
-                    println!("emitting {:?} vel {}", evt_type, velocity);
-                    event.set_subs();
-                    event.set_direct();
-                    event.set_source(seq_port);
-                    sequencer.event_output(&mut event).unwrap();
-                    sequencer.drain_output().unwrap();
+                if let Some(evt) = event {
+                    let l_ev = LiveEvent::Midi {
+                        channel: 0.into(),
+                        message: evt,
+                    };
+                    let mut buf = Vec::new();
+                    l_ev.write(&mut buf).unwrap();
+                    port.send(&buf[..]).unwrap()
                 }
             }
         }
