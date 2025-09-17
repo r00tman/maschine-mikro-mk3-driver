@@ -3,32 +3,20 @@ mod self_test;
 
 use crate::config::NOTEMAPS;
 use crate::self_test::self_test;
-use hidapi::HidResult;
+use hidapi::{HidDevice, HidResult};
 use maschine_library::controls::{Buttons, PadEventType};
 use maschine_library::lights::{Brightness, Lights, PadColors};
 use maschine_library::screen::Screen;
-use midir_alsa::MidiOutput;
 use midir_alsa::os::unix::VirtualOutput;
+use midir_alsa::{MidiOutput, MidiOutputConnection};
 use midly::{MidiMessage, live::LiveEvent};
 
-fn main() -> HidResult<()> {
-    let output = MidiOutput::new("Maschine Mikro MK3").expect("Couldn't open MIDI output");
-    let mut port = output
-        .create_virtual("Maschine Mikro MK3 MIDI Out")
-        .expect("Couldn't create virtual port");
-
-    let api = hidapi::HidApi::new()?;
-    #[allow(non_snake_case)]
-    let (VID, PID) = (0x17cc, 0x1700);
-    let device = api.open(VID, PID)?;
-
-    device.set_blocking_mode(false)?;
-
-    let mut screen = Screen::new();
-    let mut lights = Lights::new();
-
-    self_test(&device, &mut screen, &mut lights)?;
-
+fn main_loop(
+    device: &HidDevice,
+    _screen: &mut Screen,
+    lights: &mut Lights,
+    port: &mut MidiOutputConnection,
+) -> HidResult<()> {
     let mut buf = [0u8; 64];
     loop {
         let size = device.read_timeout(&mut buf, 10)?;
@@ -148,7 +136,30 @@ fn main() -> HidResult<()> {
             }
         }
         if changed_lights {
-            lights.write(&device)?;
+            lights.write(device)?;
         }
     }
+}
+
+fn main() -> HidResult<()> {
+    let output = MidiOutput::new("Maschine Mikro MK3").expect("Couldn't open MIDI output");
+    let mut port = output
+        .create_virtual("Maschine Mikro MK3 MIDI Out")
+        .expect("Couldn't create virtual port");
+
+    let api = hidapi::HidApi::new()?;
+    #[allow(non_snake_case)]
+    let (VID, PID) = (0x17cc, 0x1700);
+    let device = api.open(VID, PID)?;
+
+    device.set_blocking_mode(false)?;
+
+    let mut screen = Screen::new();
+    let mut lights = Lights::new();
+
+    self_test(&device, &mut screen, &mut lights)?;
+
+    main_loop(&device, &mut screen, &mut lights, &mut port)?;
+
+    Ok(())
 }
