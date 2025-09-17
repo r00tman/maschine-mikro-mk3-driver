@@ -1,11 +1,10 @@
 [package]
-name = "driver"
+name = "maschine_library"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
 
 [dependencies]
-maschine_library.workspace = true
 hidapi.workspace = true
 num.workspace = true
 num-derive.workspace = true

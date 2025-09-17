@@ -2,7 +2,13 @@
 resolver = "3"
 members = ["crates/*"]
 
+[workspace.package]
+version = "0.2.0"
+edition = "2024"
+authors = ["Viktor Rudnev <me@vrudnev.xyz>"]
+
 [workspace.dependencies]
+maschine_library = { path = "crates/maschine_library" }
 midir_alsa = { path = "crates/midir_alsa" }
 hidapi = { version = "2.6.3" }
 num = { version = "0.4.3" }

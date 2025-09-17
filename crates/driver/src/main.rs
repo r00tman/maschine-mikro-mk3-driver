@@ -1,18 +1,15 @@
 mod config;
-mod controls;
-mod font;
-mod lights;
-mod screen;
 mod self_test;
-use crate::controls::{Buttons, PadEventType};
-use crate::lights::{Brightness, Lights, PadColors};
-use crate::screen::Screen;
+
 use crate::config::NOTEMAPS;
 use crate::self_test::self_test;
-use hidapi::{HidResult};
-use midir_alsa::os::unix::VirtualOutput;
+use hidapi::HidResult;
+use maschine_library::controls::{Buttons, PadEventType};
+use maschine_library::lights::{Brightness, Lights, PadColors};
+use maschine_library::screen::Screen;
 use midir_alsa::MidiOutput;
-use midly::{live::LiveEvent, MidiMessage};
+use midir_alsa::os::unix::VirtualOutput;
+use midly::{MidiMessage, live::LiveEvent};
 
 fn main() -> HidResult<()> {
     let output = MidiOutput::new("Maschine Mikro MK3").expect("Couldn't open MIDI output");

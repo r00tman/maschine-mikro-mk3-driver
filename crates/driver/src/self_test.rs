@@ -1,10 +1,14 @@
-use crate::font::Font;
-use crate::lights::{Brightness, Lights, PadColors};
-use crate::screen::Screen;
 use hidapi::{HidDevice, HidResult};
+use maschine_library::font::Font;
+use maschine_library::lights::{Brightness, Lights, PadColors};
+use maschine_library::screen::Screen;
 use std::{thread, time};
 
-pub(crate) fn self_test(device: &HidDevice, screen: &mut Screen, lights: &mut Lights) -> HidResult<()> {
+pub(crate) fn self_test(
+    device: &HidDevice,
+    screen: &mut Screen,
+    lights: &mut Lights,
+) -> HidResult<()> {
     Font::write_digit(screen, 0, 0, 1, 4);
     screen.write(device)?;
     thread::sleep(time::Duration::from_millis(100));
