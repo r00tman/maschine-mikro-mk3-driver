@@ -1,15 +1,49 @@
 mod config;
 mod self_test;
 
-use crate::config::NOTEMAPS;
+use crate::config::{CLIENT_NAME, NOTEMAPS, PORT_NAME};
 use crate::self_test::self_test;
+use clap::Parser;
 use hidapi::{HidDevice, HidResult};
 use maschine_library::controls::{Buttons, PadEventType};
 use maschine_library::lights::{Brightness, Lights, PadColors};
 use maschine_library::screen::Screen;
-use midir_alsa::os::unix::VirtualOutput;
-use midir_alsa::{MidiOutput, MidiOutputConnection};
+use midir::os::unix::VirtualOutput;
+use midir::{MidiOutput, MidiOutputConnection};
 use midly::{MidiMessage, live::LiveEvent};
+
+#[derive(Parser, Debug)]
+#[clap(
+    name = "Maschine Mikro MK3 Userspace MIDI driver",
+    version = "1.0",
+    author = "r00tman <me@vrudnev.xyz>"
+)]
+struct Args {}
+
+fn main() -> HidResult<()> {
+    let _args = Args::parse();
+
+    let output = MidiOutput::new(CLIENT_NAME).expect("Couldn't open MIDI output");
+    let mut port = output
+        .create_virtual(PORT_NAME)
+        .expect("Couldn't create virtual port");
+
+    let api = hidapi::HidApi::new()?;
+    #[allow(non_snake_case)]
+    let (VID, PID) = (0x17cc, 0x1700);
+    let device = api.open(VID, PID)?;
+
+    device.set_blocking_mode(false)?;
+
+    let mut screen = Screen::new();
+    let mut lights = Lights::new();
+
+    self_test(&device, &mut screen, &mut lights)?;
+
+    main_loop(&device, &mut screen, &mut lights, &mut port)?;
+
+    Ok(())
+}
 
 fn main_loop(
     device: &HidDevice,
@@ -139,27 +173,4 @@ fn main_loop(
             lights.write(device)?;
         }
     }
-}
-
-fn main() -> HidResult<()> {
-    let output = MidiOutput::new("Maschine Mikro MK3").expect("Couldn't open MIDI output");
-    let mut port = output
-        .create_virtual("Maschine Mikro MK3 MIDI Out")
-        .expect("Couldn't create virtual port");
-
-    let api = hidapi::HidApi::new()?;
-    #[allow(non_snake_case)]
-    let (VID, PID) = (0x17cc, 0x1700);
-    let device = api.open(VID, PID)?;
-
-    device.set_blocking_mode(false)?;
-
-    let mut screen = Screen::new();
-    let mut lights = Lights::new();
-
-    self_test(&device, &mut screen, &mut lights)?;
-
-    main_loop(&device, &mut screen, &mut lights, &mut port)?;
-
-    Ok(())
 }

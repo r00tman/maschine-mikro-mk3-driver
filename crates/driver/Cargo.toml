@@ -9,4 +9,5 @@ maschine_library.workspace = true
 hidapi.workspace = true
 num.workspace = true
 midly.workspace = true
-midir_alsa.workspace = true
+midir.workspace = true
+clap.workspace = true

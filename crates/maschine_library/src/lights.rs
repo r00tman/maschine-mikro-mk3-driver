@@ -37,7 +37,7 @@ pub struct Lights {
 }
 
 impl Lights {
-    #[allow(clippy::new_without_default, reason="intentional")]
+    #[allow(clippy::new_without_default, reason = "intentional")]
     pub fn new() -> Lights {
         Lights { status: [0; 80] }
     }
