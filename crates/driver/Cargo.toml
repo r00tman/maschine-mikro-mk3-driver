@@ -1,0 +1,13 @@
+[package]
+name = "driver"
+version = "0.2.0"
+authors = ["Viktor Rudnev <me@vrudnev.xyz>"]
+edition = "2018"
+
+[dependencies]
+hidapi.workspace = true
+num.workspace = true
+num-derive.workspace = true
+num-traits.workspace = true
+midly.workspace = true
+midir.workspace = true

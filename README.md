@@ -8,15 +8,15 @@ Inspired by [maschine.rs](https://github.com/wrl/maschine.rs).
 Let's install dependencies first:
 - Debian/Ubuntu:
   ```
-  sudo apt install build-essential pkg-config libasound2-dev libjack-dev libusb-1.0-0-dev
+  sudo apt install build-essential pkg-config libasound2-dev libjack-dev libusb-1.0-0-dev libudev-dev
   ```
 - Fedora/RHEL:
   ```
-  sudo dnf install @development-tools alsa-lib-devel jack-audio-connection-kit-devel libusb-devel
+  sudo dnf install @development-tools alsa-lib-devel jack-audio-connection-kit-devel libusb-devel systemd-devel
   ```
 - Arch Linux:
   ```
-  sudo pacman -S base-devel alsa-lib pipewire-jack libusb  # (or `jack2` instead of `pipewire-jack`)
+  sudo pacman -S base-devel alsa-lib pipewire-jack libusb systemd-libs  # (or `jack2` instead of `pipewire-jack`)
   ``` 
 
 Then we can proceed with the repo:

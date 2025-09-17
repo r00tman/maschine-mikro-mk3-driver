@@ -24,7 +24,7 @@ impl Screen {
         let imod = i % 8;
         let idx = chunk * 128 + j;
         let val = self.buffer[idx] & (1 << imod);
-        return val == 0;
+        val == 0
     }
 
     pub fn set(&mut self, i: usize, j: usize, val: bool) {

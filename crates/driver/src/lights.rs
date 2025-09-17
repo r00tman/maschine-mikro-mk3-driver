@@ -1,6 +1,6 @@
-use num_derive::FromPrimitive;
 use crate::controls::Buttons;
 use hidapi::{HidDevice, HidResult};
+use num_derive::FromPrimitive;
 
 #[derive(FromPrimitive, Debug, Clone, Copy, PartialEq)]
 pub enum Brightness {
@@ -50,10 +50,7 @@ impl Lights {
     }
 
     pub fn button_has_light(&self, id: Buttons) -> bool {
-        match id {
-            Buttons::EncoderTouch | Buttons::EncoderPress => false,
-            _ => true,
-        }
+        !matches!(id, Buttons::EncoderTouch | Buttons::EncoderPress)
     }
 
     pub fn set_button(&mut self, id: Buttons, b: Brightness) {
@@ -89,7 +86,7 @@ impl Lights {
                 _ => Brightness::Off,
             },
         };
-        return (color, b);
+        (color, b)
     }
 
     pub fn write(&self, h: &HidDevice) -> HidResult<()> {
