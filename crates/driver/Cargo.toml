@@ -10,4 +10,4 @@ num.workspace = true
 num-derive.workspace = true
 num-traits.workspace = true
 midly.workspace = true
-midir.workspace = true
+midir_alsa.workspace = true

@@ -137,7 +137,7 @@ name = "driver"
 version = "0.2.0"
 dependencies = [
  "hidapi",
- "midir",
+ "midir_alsa",
  "midly",
  "num",
  "num-derive",
@@ -216,6 +216,13 @@ dependencies = [
  "wasm-bindgen",
  "web-sys",
  "windows",
+]
+
+[[package]]
+name = "midir_alsa"
+version = "0.1.0"
+dependencies = [
+ "midir",
 ]
 
 [[package]]
