@@ -13,4 +13,4 @@ num = "*"
 num-derive = "*"
 num-traits = "*"
 midly = "0.5.3"
-midir = { version = "0.10.1", features = ["default", "jack"] }
+midir = { version = "0.10.1", features = ["default"] }

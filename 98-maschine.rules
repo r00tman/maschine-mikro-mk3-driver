@@ -1,2 +1,3 @@
-SUBSYSTEM=="usb", ATTR{idVendor}=="17cc", ATTR{idProduct}=="1700", MODE="0660", GROUP="input", TAG+="uaccess", TAG+="udev-acl", SYMLINK+="maschine%n"
-KERNEL=="hidraw*", ATTRS{idVendor}=="17cc", ATTRS{idProduct}=="1700", MODE="0660", GROUP="input", TAG+="uaccess", TAG+="udev-acl"
+SUBSYSTEM=="usb", ATTR{idVendor}=="17cc", ATTR{idProduct}=="1700", MODE="0666", TAG+="uaccess", TAG+="udev-acl", SYMLINK+="maschine%n"
+KERNEL=="hidraw*", ATTRS{idVendor}=="17cc", ATTRS{idProduct}=="1700", MODE="0666", TAG+="uaccess", TAG+="udev-acl"
+
