@@ -31,19 +31,13 @@ cargo run --release
 This will init the controller and create an alsaseq MIDI port called `Maschine Mikro Mk3 MIDI Out`.
 Pads have been tested to work with Hydrogen, EZdrummer 2/3, Addictive Drums 2 as plugins via REAPER+LinVst and standalone via Wine.
 
-[Important troubleshooting note from user `mikobuntu`](https://github.com/r00tman/maschine-mikro-mk3-driver/issues/5) (now in reverse after the update): If for some reason the driver doesn't load, try adding Jack support in Cargo.toml. This can be done by changing line 16 from
+**Important note about MIDI backends:** By default, ALSA backend is used to create virtual MIDI port. If you need Jack backend, please use this command instead:
+```shell
+cargo run --release --features jack
 ```
-midir = { version = "0.10.1", features = ["default"] }
-```
-to
-```
-midir = { version = "0.10.1", features = ["default", "jack"] }
-```
-and rerunning/recompiling the app.
+I tried to make a version that could do both, but due to 1) how `midir` handles backends during compile-time (no features = alsa, `["jack"]` features = jack) and 2) how rust handles dependencies with different feature flag sets ([feature unification](https://github.com/rust-lang/cargo/issues/10489)), it does not seem possible.
 
-I'm currently looking into a more permanent solution that would support both ALSA and Jack coexisting somehow while not requiring jackd to be running, but I'm not sure when I would finish it. I'm super happy for any suggestions.
-
-Note: In previous versions, 98-maschine.rules was granting access to Maschine only to users in `input` group. This is no longer needed, the new version of the udev rules file allows Maschine to be accessed by any user. This simplifies installation, e.g., for Ubuntu users, as by default there's no `input` group there.
+**Note:** In previous versions, 98-maschine.rules was granting access to Maschine only to users in `input` group. This is no longer needed, the new version of the udev rules file allows Maschine to be accessed by any user. This simplifies installation, e.g., for Ubuntu users, as by default there's no `input` group there.
 
 ## Progress
 

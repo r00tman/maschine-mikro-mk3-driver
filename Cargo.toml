@@ -15,7 +15,6 @@ num-derive = { version = "0.4.2" }
 num-traits = { version = "0.2.19" }
 midly = { version = "0.5.3" }
 clap = { version = "4.5.47", features = ["derive"] }
-midir = { version = "0.10.2", features = ["default"] }
 
 [workspace.metadata.cargo-shear]
 ignored = ["num-traits"]
