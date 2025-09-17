@@ -6,17 +6,26 @@ Inspired by [maschine.rs](https://github.com/wrl/maschine.rs).
 ## Getting Started
 
 Let's install dependencies first:
-- Debian/Ubuntu: `sudo apt install build-essential pkg-config libasound2-dev libjack-dev libusb-1.0-0-dev`
-- Fedora/RHEL: `sudo dnf install @development-tools alsa-lib-devel jack-audio-connection-kit-devel libusb-devel`
-- Arch Linux: `sudo pacman -S base-devel alsa-lib pipewire-jack libusb` (or `jack2` instead of `pipewire-jack`)
+- Debian/Ubuntu:
+  ```
+  sudo apt install build-essential pkg-config libasound2-dev libjack-dev libusb-1.0-0-dev
+  ```
+- Fedora/RHEL:
+  ```
+  sudo dnf install @development-tools alsa-lib-devel jack-audio-connection-kit-devel libusb-devel
+  ```
+- Arch Linux:
+  ```
+  sudo pacman -S base-devel alsa-lib pipewire-jack libusb  # (or `jack2` instead of `pipewire-jack`)
+  ``` 
 
 Then we can proceed with the repo:
 
 ```shell
-$ git clone https://github.com/r00tman/maschine-mikro-mk3-driver.git; cd maschine-mikro-mk3-driver
-$ sudo cp 98-maschine.rules /etc/udev/rules.d/
-$ sudo udevadm control --reload && sudo udevadm trigger
-$ cargo run --release
+git clone https://github.com/r00tman/maschine-mikro-mk3-driver.git; cd maschine-mikro-mk3-driver
+sudo cp 98-maschine.rules /etc/udev/rules.d/
+sudo udevadm control --reload && sudo udevadm trigger
+cargo run --release
 ```
 
 This will init the controller and create an alsaseq MIDI port called `Maschine Mikro Mk3 MIDI Out`.
