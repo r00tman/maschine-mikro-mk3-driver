@@ -8,7 +8,5 @@ authors.workspace = true
 maschine_library.workspace = true
 hidapi.workspace = true
 num.workspace = true
-num-derive.workspace = true
-num-traits.workspace = true
 midly.workspace = true
 midir_alsa.workspace = true
