@@ -15,6 +15,18 @@ $ cargo run --release
 If your user is in `input` group, this will init the controller and create an alsaseq MIDI port called `Maschine Mikro Mk3 MIDI`.
 Pads have been tested to work with Hydrogen, EZdrummer 2/3, Addictive Drums 2 as plugins via REAPER+LinVst and standalone via Wine.
 
+[Important troubleshooting note from user `mikobuntu`](https://github.com/r00tman/maschine-mikro-mk3-driver/issues/5): If for some reason it doesn't load, try removing Jack support in Cargo.toml. This can be done by changing line 16 from
+```
+midir = { version = "0.10.1", features = ["default", "jack"] }
+```
+to
+```
+midir = { version = "0.10.1", features = ["default"] }
+```
+and rerunning/recompiling the app.
+
+I'm currently looking into a more permanent solution that would support both ALSA and Jack coexisting somehow while not requiring jackd to be running, but I'm not sure when I would finish it. I'm super happy for any suggestions.
+
 ## Progress
 
 What works:
