@@ -59,10 +59,9 @@ For example, it is now possible to turn unpressed pad LEDs completely off in the
 Or it turns out that every button has 4 levels of brightness, not just Off/On as in the official MIDI Mode.
 
 Although at the moment, only pads are exported via MIDI.
-Pad MIDI notes are hardcoded and can be changed in `src/main.rs:L201`.
+Pad MIDI notes can be changed through custom toml config (e.g., `-c example_config.toml`).
 
-A better solution would be to make a config file and a GUI configurator which would allow to map all functions freely.
-Once this dynamic mapping is implemented, it would be much easier to export buttons and other functions via MIDI, OSC, etc.
+Would be cool to be able to export buttons and other functions via MIDI, OSC, etc too. GUI editor for the config file might be nice to have too.
 
 Contributions are welcome!
 
