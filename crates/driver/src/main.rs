@@ -1,9 +1,10 @@
-mod config;
 mod self_test;
+mod settings;
 
-use crate::config::{CLIENT_NAME, NOTEMAPS, PORT_NAME};
 use crate::self_test::self_test;
+use crate::settings::Settings;
 use clap::Parser;
+use config::Config;
 use hidapi::{HidDevice, HidResult};
 use maschine_library::controls::{Buttons, PadEventType};
 use maschine_library::lights::{Brightness, Lights, PadColors};
@@ -18,14 +19,31 @@ use midly::{MidiMessage, live::LiveEvent};
     version = "1.0",
     author = "r00tman <me@vrudnev.xyz>"
 )]
-struct Args {}
+struct Args {
+    #[clap(short, long)]
+    config: Option<String>,
+}
 
 fn main() -> HidResult<()> {
-    let _args = Args::parse();
+    let args = Args::parse();
 
-    let output = MidiOutput::new(CLIENT_NAME).expect("Couldn't open MIDI output");
+    let mut cfg = Config::builder();
+
+    if let Some(config_fn) = args.config {
+        cfg = cfg.add_source(config::File::with_name(config_fn.as_str()));
+    }
+
+    let cfg = cfg.build().expect("Can't create settings");
+    let settings: Settings = cfg.try_deserialize().expect("Can't parse settings");
+
+    settings.validate().unwrap();
+
+    println!("Running with settings:");
+    println!("{settings:?}");
+
+    let output = MidiOutput::new(&settings.client_name).expect("Couldn't open MIDI output");
     let mut port = output
-        .create_virtual(PORT_NAME)
+        .create_virtual(&settings.port_name)
         .expect("Couldn't create virtual port");
 
     let api = hidapi::HidApi::new()?;
@@ -40,7 +58,7 @@ fn main() -> HidResult<()> {
 
     self_test(&device, &mut screen, &mut lights)?;
 
-    main_loop(&device, &mut screen, &mut lights, &mut port)?;
+    main_loop(&device, &mut screen, &mut lights, &mut port, &settings)?;
 
     Ok(())
 }
@@ -50,6 +68,7 @@ fn main_loop(
     _screen: &mut Screen,
     lights: &mut Lights,
     port: &mut MidiOutputConnection,
+    settings: &Settings,
 ) -> HidResult<()> {
     let mut buf = [0u8; 64];
     loop {
@@ -140,7 +159,7 @@ fn main_loop(
                     changed_lights = true;
                 }
 
-                let note = NOTEMAPS[idx as usize];
+                let note = settings.notemaps[idx as usize];
                 let mut velocity = (val >> 5) as u8;
                 if val > 0 && velocity == 0 {
                     velocity = 1;

@@ -9,8 +9,8 @@ pub struct Screen {
 
 impl Screen {
     #[allow(clippy::new_without_default, reason = "intentional")]
-    pub fn new() -> Screen {
-        Screen {
+    pub fn new() -> Self {
+        Self {
             buffer: [0xff; 512],
         }
     }

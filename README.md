@@ -31,6 +31,11 @@ cargo run --release
 This will init the controller and create an alsaseq MIDI port called `Maschine Mikro Mk3 MIDI Out`.
 Pads have been tested to work with Hydrogen, EZdrummer 2/3, Addictive Drums 2 as plugins via REAPER+LinVst and standalone via Wine.
 
+Note that you can use your custom config with own notemappings and other settings like this:
+```shell
+cargo run --release -- -c example_config.toml
+```
+
 **Important note about MIDI backends:** By default, ALSA backend is used to create virtual MIDI port. If you need Jack backend, please use this command instead:
 ```shell
 cargo run --release --features jack

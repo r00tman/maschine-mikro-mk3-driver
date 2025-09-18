@@ -10,6 +10,8 @@ hidapi.workspace = true
 num.workspace = true
 midly.workspace = true
 clap.workspace = true
+config.workspace = true
+serde.workspace = true
 
 midir = { version = "0.10.2", features = ["default"] }
 
