@@ -16,11 +16,11 @@ use midly::{MidiMessage, live::LiveEvent};
 #[derive(Parser, Debug)]
 #[clap(
     name = "Maschine Mikro MK3 Userspace MIDI driver",
-    version = "1.0",
-    author = "r00tman <me@vrudnev.xyz>"
+    version = env!("CARGO_PKG_VERSION"),
+    author = env!("CARGO_PKG_AUTHORS"),
 )]
 struct Args {
-    #[clap(short, long)]
+    #[clap(short, long, help = "Config file (see example_config.toml)")]
     config: Option<String>,
 }
 
