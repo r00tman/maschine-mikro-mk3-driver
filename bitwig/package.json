@@ -1,0 +1,16 @@
+{
+  "name": "maschine-mikro-mk3-bitwig",
+  "version": "0.4.0",
+  "description": "Bitwig Controller Script for Maschine Mikro MK3 (Linux)",
+  "type": "module",
+  "scripts": {
+    "build": "rollup -c",
+    "watch": "rollup -c -w"
+  },
+  "devDependencies": {
+    "@rollup/plugin-terser": "^0.4.4",
+    "rollup": "^4.9.6"
+  },
+  "author": "",
+  "license": "MIT"
+}

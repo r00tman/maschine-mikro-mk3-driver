@@ -1,3 +1,67 @@
-notemaps = [49, 27, 31, 57, 48, 47, 43, 59, 36, 38, 46, 51, 36, 38, 42, 44]
+# Maschine Mikro MK3 Linux Driver Configuration
+# See README.md for full documentation
+
+# Pad note mappings (16 pads, MIDI notes 0-127)
+# Default: Standard chromatic drum machine layout (C1 to D#2)
+# 
+# IMPORTANT: Array is indexed by LOGICAL pad index (0-15), NOT physical labels (1-16)!
+# Physical pad labels on device vs logical indices:
+#   Physical:  1   2   3   4     →  Logical: 12  13  14  15  (top row)
+#   Physical:  5   6   7   8     →  Logical:  8   9  10  11
+#   Physical:  9  10  11  12     →  Logical:  4   5   6   7
+#   Physical: 13  14  15  16     →  Logical:  0   1   2   3  (bottom row)
+#
+# Standard drum machine chromatic layout (matches typical drum VSTs):
+#   Physical top row (1-4):      C1(36),  C#1(37), D1(38),  D#1(39)
+#   Physical row 5-8:            E1(40),  F1(41),  F#1(42), G1(43)
+#   Physical row 9-12:           G#1(44), A1(45),  A#1(46), B1(47)
+#   Physical bottom row (13-16): C2(48),  C#2(49), D2(50),  D#2(51)
+#
+# This matches typical drum pad controllers and General MIDI drum kits where:
+#   C1(36) = Kick, D1(38) = Snare, F#1(42) = Closed Hi-Hat, etc.
+notemaps = [48, 49, 50, 51, 44, 45, 46, 47, 40, 41, 42, 43, 36, 37, 38, 39]
+
+# ALSA/Jack client name
 client_name = "Maschine Mikro MK3"
+
+# MIDI output port name (pads/buttons/encoder/slider -> DAW)
 port_name = "Maschine Mikro MK3 MIDI Out"
+
+# MIDI input port name (DAW -> LEDs)
+port_name_in = "Maschine Mikro MK3 MIDI In"
+
+# ============================================
+# MIDI CC Mapping (fixed, not configurable):
+# ============================================
+# Buttons:  CC 20-60 (127 = press, 0 = release)
+# Encoder:  CC 1 (relative: 65+ = CW, <64 = CCW)
+# Slider:   CC 9 (0-127 absolute position)
+# Pads:     Note On/Off (notes from notemaps above)
+#
+# Button CC assignments:
+#   CC 20: Maschine    CC 30: Pitch       CC 40: Tap
+#   CC 21: Star        CC 31: Mod         CC 41: Follow
+#   CC 22: Browse      CC 32: Perform     CC 42: Play
+#   CC 23: Volume      CC 33: Notes       CC 43: Rec
+#   CC 24: Swing       CC 34: Group       CC 44: Stop
+#   CC 25: Tempo       CC 35: Auto        CC 45: Shift
+#   CC 26: Plugin      CC 36: Lock        CC 46: Fixed Vel
+#   CC 27: Sampling    CC 37: Note Repeat CC 47: Pad Mode
+#   CC 28: Left        CC 38: Restart     CC 48: Keyboard
+#   CC 29: Right       CC 39: Erase       CC 49: Chords
+#                                         CC 50: Step
+#   CC 51: Scene       CC 55: Duplicate   CC 59: Encoder Press
+#   CC 52: Pattern     CC 56: Select      CC 60: Encoder Touch
+#   CC 53: Events      CC 57: Solo
+#   CC 54: Variation   CC 58: Mute
+
+autoconnect_virmidi = true
+
+# ============================================
+# Backlight / Night mode
+# ============================================
+# If enabled, button LEDs that would normally be Off will be set to a low backlight level.
+# This makes the buttons visible in the dark (like a keyboard backlight).
+backlight_buttons = true
+# One of: "dim", "normal", "bright"
+backlight_brightness = "dim"

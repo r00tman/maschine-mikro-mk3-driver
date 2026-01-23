@@ -1,0 +1,183 @@
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Generate release notes
+      if: startsWith(github.ref, 'refs/tags/')
+      run: |
+        # Get current tag
+        CURRENT_TAG=${GITHUB_REF#refs/tags/}
+        
+        # Get previous tag
+        PREVIOUS_TAG=$(git tag --sort=-version:refname | grep -v "^${CURRENT_TAG}$" | head -n 1)
+        
+        # Generate changelog
+        echo "# Release ${CURRENT_TAG}" > RELEASE_NOTES.md
+        echo "" >> RELEASE_NOTES.md
+        
+        if [ -z "$PREVIOUS_TAG" ]; then
+          echo "## Changes" >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          git log --pretty=format:"- %s (%h)" >> RELEASE_NOTES.md
+        else
+          echo "## Changes since ${PREVIOUS_TAG}" >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          
+          # Parse commits by type
+          FEATURES=$(git log ${PREVIOUS_TAG}..${CURRENT_TAG} --pretty=format:"%s" | grep -E "^feat(\(.*\))?:" || true)
+          FIXES=$(git log ${PREVIOUS_TAG}..${CURRENT_TAG} --pretty=format:"%s" | grep -E "^fix(\(.*\))?:" || true)
+          DOCS=$(git log ${PREVIOUS_TAG}..${CURRENT_TAG} --pretty=format:"%s" | grep -E "^docs(\(.*\))?:" || true)
+          REFACTOR=$(git log ${PREVIOUS_TAG}..${CURRENT_TAG} --pretty=format:"%s" | grep -E "^refactor(\(.*\))?:" || true)
+          CHORE=$(git log ${PREVIOUS_TAG}..${CURRENT_TAG} --pretty=format:"%s" | grep -E "^chore(\(.*\))?:" || true)
+          OTHER=$(git log ${PREVIOUS_TAG}..${CURRENT_TAG} --pretty=format:"%s" | grep -vE "^(feat|fix|docs|refactor|chore)(\(.*\))?:" || true)
+          
+          if [ -n "$FEATURES" ]; then
+            echo "### ✨ Features" >> RELEASE_NOTES.md
+            echo "$FEATURES" | sed 's/^feat/- /' | sed 's/^- (\(.*\)): /- **\1**: /' | sed 's/^- : /- /' >> RELEASE_NOTES.md
+            echo "" >> RELEASE_NOTES.md
+          fi
+          
+          if [ -n "$FIXES" ]; then
+            echo "### 🐛 Bug Fixes" >> RELEASE_NOTES.md
+            echo "$FIXES" | sed 's/^fix/- /' | sed 's/^- (\(.*\)): /- **\1**: /' | sed 's/^- : /- /' >> RELEASE_NOTES.md
+            echo "" >> RELEASE_NOTES.md
+          fi
+          
+          if [ -n "$DOCS" ]; then
+            echo "### 📚 Documentation" >> RELEASE_NOTES.md
+            echo "$DOCS" | sed 's/^docs/- /' | sed 's/^- (\(.*\)): /- **\1**: /' | sed 's/^- : /- /' >> RELEASE_NOTES.md
+            echo "" >> RELEASE_NOTES.md
+          fi
+          
+          if [ -n "$REFACTOR" ]; then
+            echo "### ♻️ Refactoring" >> RELEASE_NOTES.md
+            echo "$REFACTOR" | sed 's/^refactor/- /' | sed 's/^- (\(.*\)): /- **\1**: /' | sed 's/^- : /- /' >> RELEASE_NOTES.md
+            echo "" >> RELEASE_NOTES.md
+          fi
+          
+          if [ -n "$CHORE" ]; then
+            echo "### 🔧 Chores" >> RELEASE_NOTES.md
+            echo "$CHORE" | sed 's/^chore/- /' | sed 's/^- (\(.*\)): /- **\1**: /' | sed 's/^- : /- /' >> RELEASE_NOTES.md
+            echo "" >> RELEASE_NOTES.md
+          fi
+          
+          if [ -n "$OTHER" ]; then
+            echo "### Other Changes" >> RELEASE_NOTES.md
+            echo "$OTHER" | sed 's/^/- /' >> RELEASE_NOTES.md
+            echo "" >> RELEASE_NOTES.md
+          fi
+        fi
+        
+        echo "## Installation" >> RELEASE_NOTES.md
+        echo "" >> RELEASE_NOTES.md
+        echo "### Driver Binary" >> RELEASE_NOTES.md
+        echo "Download \`maschine-mikro-mk3-driver\` (Linux x86_64) below." >> RELEASE_NOTES.md
+        echo "" >> RELEASE_NOTES.md
+        echo "### Bitwig Controller Script" >> RELEASE_NOTES.md
+        echo "Download \`MaschineMikroMK3.control.js\` and place it in:" >> RELEASE_NOTES.md
+        echo "\`~/.BitwigStudio/Controller Scripts/Native Instruments/\`" >> RELEASE_NOTES.md
+        
+        cat RELEASE_NOTES.md
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: bitwig/package.json
+    
+    - name: Cache cargo registry
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/registry
+        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-registry-
+    
+    - name: Cache cargo index
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/git
+        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-index-
+    
+    - name: Cache target directory
+      uses: actions/cache@v4
+      with:
+        path: target
+        key: ${{ runner.os }}-target-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-target-
+    
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libudev-dev libasound2-dev libjack-dev
+    
+    - name: Build Rust driver
+      run: cargo build --release --verbose
+    
+    - name: Run Rust tests
+      run: cargo test --verbose
+    
+    - name: Build Bitwig controller script
+      working-directory: bitwig
+      run: |
+        npm ci
+        npm run build
+    
+    - name: Prepare artifacts
+      run: |
+        mkdir -p artifacts
+        cp target/release/driver artifacts/maschine-mikro-mk3-driver
+        chmod +x artifacts/maschine-mikro-mk3-driver
+        cp bitwig/dist/MaschineMikroMK3.control.js artifacts/
+    
+    - name: Upload driver artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: maschine-mikro-mk3-driver-linux-x86_64
+        path: artifacts/maschine-mikro-mk3-driver
+        if-no-files-found: error
+    
+    - name: Upload Bitwig script artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: bitwig-controller-script
+        path: artifacts/MaschineMikroMK3.control.js
+        if-no-files-found: error
+    
+    - name: Create release and upload artifacts
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          artifacts/maschine-mikro-mk3-driver
+          artifacts/MaschineMikroMK3.control.js
+        body_path: RELEASE_NOTES.md
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

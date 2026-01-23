@@ -41,8 +41,14 @@ impl Screen {
     }
 
     pub fn write(&self, h: &HidDevice) -> HidResult<()> {
-        h.write(&[&HEADER_HI, &self.buffer[..256]].concat())?;
-        h.write(&[&HEADER_LO, &self.buffer[256..]].concat())?;
+        let mut buf = [0u8; 265];
+        buf[..9].copy_from_slice(&HEADER_HI);
+        buf[9..].copy_from_slice(&self.buffer[..256]);
+        h.write(&buf)?;
+        
+        buf[..9].copy_from_slice(&HEADER_LO);
+        buf[9..].copy_from_slice(&self.buffer[256..]);
+        h.write(&buf)?;
         Ok(())
     }
 }
