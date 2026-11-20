@@ -41,8 +41,8 @@ impl Screen {
     }
 
     pub fn write(&self, h: &HidDevice) -> HidResult<()> {
-        h.write(&[&HEADER_HI, &self.buffer[..256]].concat())?;
-        h.write(&[&HEADER_LO, &self.buffer[256..]].concat())?;
+        crate::write_report(h, &[&HEADER_HI, &self.buffer[..256]].concat())?;
+        crate::write_report(h, &[&HEADER_LO, &self.buffer[256..]].concat())?;
         Ok(())
     }
 }
