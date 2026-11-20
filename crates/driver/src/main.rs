@@ -24,7 +24,7 @@ struct Args {
     config: Option<String>,
 }
 
-fn main() -> HidResult<()> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
     let mut cfg = Config::builder();
@@ -41,10 +41,15 @@ fn main() -> HidResult<()> {
     println!("Running with settings:");
     println!("{settings:?}");
 
-    let output = MidiOutput::new(&settings.client_name).expect("Couldn't open MIDI output");
+    let output = MidiOutput::new(&settings.client_name).map_err(|error| {
+        format!(
+            "Cannot open MIDI client {:?}: {error}",
+            settings.client_name
+        )
+    })?;
     let mut port = output
         .create_virtual(&settings.port_name)
-        .expect("Couldn't create virtual port");
+        .map_err(|error| format!("Cannot create MIDI port {:?}: {error}", settings.port_name))?;
 
     let api = hidapi::HidApi::new()?;
     #[allow(non_snake_case)]
