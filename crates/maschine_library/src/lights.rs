@@ -32,8 +32,7 @@ pub enum PadColors {
     White = 17,
 }
 
-/// Two low bits of a Smart Strip palette byte. Appearance depends on the color.
-/// For red, codes 0 and 1 looked alike, 2 was brighter, and 3 looked pale pink.
+/// The low two bits of a Smart Strip palette byte. Their effect depends on the color.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum StripIntensity {
     Code0 = 0,
