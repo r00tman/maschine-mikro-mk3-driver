@@ -32,6 +32,16 @@ pub enum PadColors {
     White = 17,
 }
 
+/// Two low bits of a Smart Strip palette byte. Appearance depends on the color.
+/// For red, codes 0 and 1 looked alike, 2 was brighter, and 3 looked pale pink.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum StripIntensity {
+    Code0 = 0,
+    Code1 = 1,
+    Code2 = 2,
+    Code3 = 3,
+}
+
 pub struct Lights {
     status: [u8; 80],
 }
@@ -59,7 +69,16 @@ impl Lights {
     }
 
     pub fn set_slider(&mut self, id: usize, b: Brightness) {
-        self.status[55 + id] = b as u8;
+        self.status[55..][id] = b as u8;
+    }
+
+    /// Set one of the 25 strip segments (0 is leftmost). Off always writes zero.
+    pub fn set_slider_color(&mut self, id: usize, color: PadColors, intensity: StripIntensity) {
+        self.status[55..][id] = if color == PadColors::Off {
+            0
+        } else {
+            ((color as u8) << 2) | intensity as u8
+        };
     }
 
     pub fn set_pad(&mut self, id: usize, c: PadColors, b: Brightness) {
@@ -94,5 +113,29 @@ impl Lights {
         h.write(&[&[0x80u8] as &[u8], &self.status].concat())?;
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod strip_color_tests {
+    use super::*;
+    #[test]
+    fn writes_only_the_selected_strip_byte() {
+        let mut lights = Lights::new();
+        lights.set_pad(15, PadColors::Blue, Brightness::Bright);
+        for (id, color, code, byte) in [
+            (0, PadColors::Red, StripIntensity::Code0, 4),
+            (12, PadColors::Red, StripIntensity::Code1, 5),
+            (12, PadColors::Red, StripIntensity::Code2, 6),
+            (24, PadColors::White, StripIntensity::Code3, 71),
+            (24, PadColors::Off, StripIntensity::Code3, 0),
+        ] {
+            let mut expected = lights.status;
+            expected[55 + id] = byte;
+            lights.set_slider_color(id, color, code);
+            assert_eq!(lights.status, expected);
+        }
+        lights.set_slider(0, Brightness::Normal);
+        assert_eq!(lights.status[55], 0x7e);
     }
 }
