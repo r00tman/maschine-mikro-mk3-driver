@@ -32,7 +32,7 @@ pub enum PadColors {
     White = 17,
 }
 
-/// Button-only brightness codes. VeryDim is below Dim on PLAY and STOP.
+/// Button LED brightness codes. The raw value of `VeryDim` is higher than that of `Dim`.
 #[derive(FromPrimitive, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ButtonBrightness {
     Off = 0,
@@ -56,7 +56,7 @@ impl Lights {
         self.status.fill(0);
     }
 
-    /// Legacy getter: VeryDim is reported as Dim. Use button_level for the exact code.
+    /// Maps `VeryDim` to [`Brightness::Dim`]. Use [`Self::button_level`] for the exact code.
     pub fn get_button(&self, id: Buttons) -> Brightness {
         match self.button_level(id) {
             ButtonBrightness::VeryDim | ButtonBrightness::Dim => Brightness::Dim,
