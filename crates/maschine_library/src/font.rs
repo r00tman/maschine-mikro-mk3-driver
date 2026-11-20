@@ -116,9 +116,9 @@ const FONT: [[&[u8; 8]; 8]; 10] = [
 pub struct Font {}
 
 impl Font {
+    /// Draws a decimal digit, clipping it at the display edges.
+    /// A zero scale or a digit outside `0..=9` leaves the display unchanged.
     pub fn write_digit(s: &mut Screen, y: usize, x: usize, num: usize, scale: usize) {
-        // Digit shapes are clipped at the right and bottom of the display.
-        // Scale zero has an empty footprint.
         if x >= 128 || y >= 32 || scale == 0 {
             return;
         }
