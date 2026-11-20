@@ -77,8 +77,9 @@ fn main_loop(
             continue;
         }
 
+        let buf = &buf[..size];
         let mut changed_lights = false;
-        if buf[0] == 0x01 {
+        if buf[0] == 0x01 && buf.len() >= 11 {
             // button mode
             for i in 0..6 {
                 // bytes
@@ -129,14 +130,7 @@ fn main_loop(
             }
         } else if buf[0] == 0x02 {
             // pad mode
-            for i in (1..buf.len()).step_by(3) {
-                let idx = buf[i];
-                let evt = buf[i + 1] & 0xf0;
-                let val = ((buf[i + 1] as u16 & 0x0f) << 8) + buf[i + 2] as u16;
-                if i > 1 && idx == 0 && evt == 0 && val == 0 {
-                    break;
-                }
-                let pad_evt: PadEventType = num::FromPrimitive::from_u8(evt).unwrap();
+            for (idx, pad_evt, val) in pad_events(&buf[1..]) {
                 // if evt != PadEventType::Aftertouch {
                 println!("Pad {}: {:?} @ {}", idx, pad_evt, val);
                 // }
@@ -191,5 +185,46 @@ fn main_loop(
         if changed_lights {
             lights.write(device)?;
         }
+    }
+}
+
+fn pad_events(payload: &[u8]) -> impl Iterator<Item = (u8, PadEventType, u16)> + '_ {
+    payload
+        .chunks_exact(3)
+        .enumerate()
+        .take_while(|(i, tuple)| *i == 0 || *tuple != [0, 0, 0])
+        .filter_map(|(_, tuple)| {
+            let idx = tuple[0];
+            if idx >= 16 {
+                return None;
+            }
+            let event = num::FromPrimitive::from_u8(tuple[1] & 0xf0)?;
+            let value = u16::from_be_bytes([tuple[1] & 0x0f, tuple[2]]);
+            Some((idx, event, value))
+        })
+}
+
+#[cfg(test)]
+mod report_tests {
+    use super::*;
+    #[test]
+    fn preserves_first_zero_tuple_and_stops_at_padding() {
+        let data = [0, 0, 0, 2, 0x1f, 0xff, 0, 0, 0, 3, 0x30, 7];
+        assert_eq!(
+            pad_events(&data).collect::<Vec<_>>(),
+            [
+                (0, PadEventType::PressOn, 0),
+                (2, PadEventType::NoteOn, 4095)
+            ]
+        );
+    }
+    #[test]
+    fn ignores_unknown_events_invalid_pads_and_truncated_tail() {
+        let data = [16, 0x10, 8, 1, 0xf0, 2, 3, 0x30, 9, 7, 0x10, 42];
+        assert_eq!(
+            pad_events(&data[..11]).collect::<Vec<_>>(),
+            [(3, PadEventType::NoteOff, 9)]
+        );
+        assert_eq!(pad_events(&data[..2]).count(), 0);
     }
 }
