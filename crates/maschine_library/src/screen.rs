@@ -21,6 +21,7 @@ impl Screen {
 
     #[allow(dead_code)]
     pub fn get(&self, i: usize, j: usize) -> bool {
+        assert!(i < 32 && j < 128, "pixel outside display");
         let chunk = i / 8;
         let imod = i % 8;
         let idx = chunk * 128 + j;
@@ -29,6 +30,7 @@ impl Screen {
     }
 
     pub fn set(&mut self, i: usize, j: usize, val: bool) {
+        assert!(i < 32 && j < 128, "pixel outside display");
         let chunk = i / 8;
         let imod: u8 = (i % 8) as u8;
         let idx = chunk * 128 + j;

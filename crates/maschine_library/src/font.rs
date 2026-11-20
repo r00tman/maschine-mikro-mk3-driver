@@ -117,12 +117,53 @@ pub struct Font {}
 
 impl Font {
     pub fn write_digit(s: &mut Screen, y: usize, x: usize, num: usize, scale: usize) {
-        let sym = FONT[num];
-        for i in 0..(8 * scale) {
-            for j in 0..(8 * scale) {
+        // Digit shapes are clipped at the right and bottom of the display.
+        // Scale zero has an empty footprint.
+        if x >= 128 || y >= 32 || scale == 0 {
+            return;
+        }
+        let Some(sym) = FONT.get(num) else {
+            return;
+        };
+        let side = scale.saturating_mul(8);
+        for i in 0..side.min(32 - y) {
+            for j in 0..side.min(128 - x) {
                 let bit = sym[i / scale][j / scale] != b' ';
                 s.set(i + y, j + x, bit);
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn clipped_digit_matches_visible_part_of_full_digit() {
+        let mut full = Screen::new();
+        let mut clipped = Screen::new();
+        Font::write_digit(&mut full, 0, 0, 8, 2);
+        Font::write_digit(&mut clipped, 23, 119, 8, 2);
+        for i in 0..32 {
+            for j in 0..128 {
+                assert_eq!(
+                    clipped.get(i, j),
+                    i >= 23 && j >= 119 && full.get(i - 23, j - 119)
+                );
+            }
+        }
+    }
+    #[test]
+    fn invalid_digits_and_origins_leave_display_clear() {
+        let mut screen = Screen::new();
+        for (y, x, n, scale) in [(0, 0, 10, 1), (32, 0, 8, 1), (0, 128, 8, 1), (0, 0, 8, 0)] {
+            Font::write_digit(&mut screen, y, x, n, scale);
+        }
+        for i in 0..32 {
+            for j in 0..128 {
+                assert!(!screen.get(i, j));
+            }
+        }
+        Font::write_digit(&mut screen, 31, 127, 8, usize::MAX);
     }
 }
