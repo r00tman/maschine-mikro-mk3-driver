@@ -8,15 +8,15 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'agent'",
+            "name": "Debug executable 'driver'",
             "cargo": {
                 "args": [
                     "build",
-                    "--bin=agent",
-                    "--package=agent"
+                    "--bin=driver",
+                    "--package=driver"
                 ],
                 "filter": {
-                    "name": "agent",
+                    "name": "driver",
                     "kind": "bin"
                 }
             },
@@ -26,16 +26,16 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in executable 'agent'",
+            "name": "Debug unit tests in executable 'driver'",
             "cargo": {
                 "args": [
                     "test",
                     "--no-run",
-                    "--bin=agent",
-                    "--package=agent"
+                    "--bin=driver",
+                    "--package=driver"
                 ],
                 "filter": {
-                    "name": "agent",
+                    "name": "driver",
                     "kind": "bin"
                 }
             },
