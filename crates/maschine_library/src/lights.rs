@@ -71,11 +71,11 @@ impl Lights {
                 (c << 2) + (b & 0b11)
             }
         };
-        self.status[39 + id] = val;
+        self.status[39..55][id] = val;
     }
 
     pub fn get_pad(&self, id: usize) -> (PadColors, Brightness) {
-        let val = self.status[39 + id];
+        let val = self.status[39..55][id];
         let color: PadColors = num::FromPrimitive::from_u8(val >> 2).unwrap();
         let b = match val {
             0..=3 => Brightness::Off,
@@ -94,5 +94,20 @@ impl Lights {
         h.write(&[&[0x80u8] as &[u8], &self.status].concat())?;
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod pad_bounds_tests {
+    use super::*;
+    #[test]
+    #[should_panic]
+    fn cannot_write_a_strip_led_through_pad_16() {
+        Lights::new().set_pad(16, PadColors::Red, Brightness::Normal);
+    }
+    #[test]
+    #[should_panic]
+    fn cannot_read_a_strip_led_through_pad_16() {
+        Lights::new().get_pad(16);
     }
 }
