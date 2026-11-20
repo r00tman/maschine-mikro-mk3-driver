@@ -41,8 +41,30 @@ impl Screen {
     }
 
     pub fn write(&self, h: &HidDevice) -> HidResult<()> {
-        crate::write_report(h, &[&HEADER_HI, &self.buffer[..256]].concat())?;
-        crate::write_report(h, &[&HEADER_LO, &self.buffer[256..]].concat())?;
-        Ok(())
+        self.write_with(|report| h.write(report))
+    }
+
+    fn write_with(&self, mut write: impl FnMut(&[u8]) -> HidResult<usize>) -> HidResult<()> {
+        crate::write_report(&[&HEADER_HI, &self.buffer[..256]].concat(), &mut write)?;
+        crate::write_report(&[&HEADER_LO, &self.buffer[256..]].concat(), write)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn short_first_oled_write_returns_error_and_skips_second_half() {
+        let mut writes = 0;
+        let result = Screen::new().write_with(|report| {
+            writes += 1;
+            assert!(report.starts_with(&HEADER_HI));
+            assert_eq!(report.len(), 265);
+            Ok(264)
+        });
+
+        assert!(result.is_err());
+        assert_eq!(writes, 1);
     }
 }

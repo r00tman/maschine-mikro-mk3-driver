@@ -91,6 +91,8 @@ impl Lights {
     }
 
     pub fn write(&self, h: &HidDevice) -> HidResult<()> {
-        crate::write_report(h, &[&[0x80u8] as &[u8], &self.status].concat())
+        crate::write_report(&[&[0x80u8] as &[u8], &self.status].concat(), |report| {
+            h.write(report)
+        })
     }
 }

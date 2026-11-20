@@ -3,11 +3,11 @@ pub mod font;
 pub mod lights;
 pub mod screen;
 
-use hidapi::{HidDevice, HidError, HidResult};
+use hidapi::{HidError, HidResult};
 
 // A partial HID report must not be retried as a new report with the remaining bytes.
-fn write_report(device: &HidDevice, report: &[u8]) -> HidResult<()> {
-    let written = device.write(report)?;
+fn write_report(report: &[u8], write: impl FnOnce(&[u8]) -> HidResult<usize>) -> HidResult<()> {
+    let written = write(report)?;
     check_report_length(report.len(), written)
 }
 
