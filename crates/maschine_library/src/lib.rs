@@ -12,8 +12,6 @@ fn write_report(report: &[u8], write: impl FnOnce(&[u8]) -> HidResult<usize>) ->
 }
 
 fn check_report_length(expected: usize, written: usize) -> HidResult<()> {
-    // The Windows HIDAPI backend may pad a short report to the device's longest
-    // output report and return that larger size. Only a smaller count is short.
     if written < expected {
         return Err(HidError::HidApiError {
             message: format!("Incomplete HID report: wrote {written} of {expected} bytes"),
