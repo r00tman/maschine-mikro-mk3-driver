@@ -32,6 +32,16 @@ pub enum PadColors {
     White = 17,
 }
 
+/// Button LED brightness codes. The raw value of `VeryDim` is higher than that of `Dim`.
+#[derive(FromPrimitive, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ButtonBrightness {
+    Off = 0,
+    VeryDim = 0x7d,
+    Dim = 0x7c,
+    Normal = 0x7e,
+    Bright = 0x7f,
+}
+
 pub struct Lights {
     status: [u8; 80],
 }
@@ -46,8 +56,14 @@ impl Lights {
         self.status.fill(0);
     }
 
+    /// Maps `VeryDim` to [`Brightness::Dim`]. Use [`Self::button_level`] for the exact code.
     pub fn get_button(&self, id: Buttons) -> Brightness {
-        num::FromPrimitive::from_u8(self.status[id as usize]).unwrap()
+        match self.button_level(id) {
+            ButtonBrightness::VeryDim | ButtonBrightness::Dim => Brightness::Dim,
+            ButtonBrightness::Normal => Brightness::Normal,
+            ButtonBrightness::Bright => Brightness::Bright,
+            ButtonBrightness::Off => Brightness::Off,
+        }
     }
 
     pub fn button_has_light(&self, id: Buttons) -> bool {
@@ -55,7 +71,23 @@ impl Lights {
     }
 
     pub fn set_button(&mut self, id: Buttons, b: Brightness) {
-        self.status[id as usize] = b as u8;
+        if self.button_has_light(id) {
+            self.status[id as usize] = b as u8;
+        }
+    }
+
+    /// Read the exact button level. Controls without a lamp report Off.
+    pub fn button_level(&self, id: Buttons) -> ButtonBrightness {
+        if !self.button_has_light(id) {
+            return ButtonBrightness::Off;
+        }
+        num::FromPrimitive::from_u8(self.status[id as usize]).unwrap()
+    }
+
+    pub fn set_button_level(&mut self, id: Buttons, level: ButtonBrightness) {
+        if self.button_has_light(id) {
+            self.status[id as usize] = level as u8;
+        }
     }
 
     pub fn set_slider(&mut self, id: usize, b: Brightness) {
@@ -94,5 +126,41 @@ impl Lights {
         h.write(&[&[0x80u8] as &[u8], &self.status].concat())?;
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod button_tests {
+    use super::*;
+    #[test]
+    fn exact_codes_and_legacy_readback() {
+        for button in [Buttons::Play, Buttons::Stop] {
+            let mut lights = Lights::new();
+            for (level, byte, legacy) in [
+                (ButtonBrightness::VeryDim, 0x7d, Brightness::Dim),
+                (ButtonBrightness::Dim, 0x7c, Brightness::Dim),
+                (ButtonBrightness::Normal, 0x7e, Brightness::Normal),
+                (ButtonBrightness::Bright, 0x7f, Brightness::Bright),
+                (ButtonBrightness::Off, 0, Brightness::Off),
+            ] {
+                lights.set_button_level(button, level);
+                assert_eq!(lights.status[button as usize], byte);
+                assert_eq!(lights.button_level(button), level);
+                assert_eq!(lights.get_button(button), legacy);
+            }
+        }
+    }
+    #[test]
+    fn encoder_controls_preserve_pad_bytes() {
+        let mut lights = Lights::new();
+        lights.set_pad(0, PadColors::Blue, Brightness::Bright);
+        lights.set_pad(1, PadColors::Red, Brightness::Normal);
+        let before = lights.status;
+        for button in [Buttons::EncoderPress, Buttons::EncoderTouch] {
+            lights.set_button(button, Brightness::Normal);
+            lights.set_button_level(button, ButtonBrightness::VeryDim);
+            assert_eq!(lights.get_button(button), Brightness::Off);
+        }
+        assert_eq!(lights.status, before);
     }
 }

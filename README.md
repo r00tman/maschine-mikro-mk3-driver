@@ -56,7 +56,7 @@ What works:
 
 So, basically everything, and even more than with the official driver.
 For example, it is now possible to turn unpressed pad LEDs completely off in the layout.
-Or it turns out that every button has 4 levels of brightness, not just Off/On as in the official MIDI Mode.
+PLAY and STOP showed four lit levels on a Mikro MK3. From dimmest to brightest the codes were 0x7d, 0x7c, 0x7e and 0x7f. Use Lights::set_button_level to select any of them.
 
 Although at the moment, only pads are exported via MIDI.
 Pad MIDI notes can be changed through custom toml config (e.g., `-c example_config.toml`).
